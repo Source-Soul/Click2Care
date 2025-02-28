@@ -94,7 +94,7 @@ export const doctors = [
     experience: "4 Years",
     about:
       "Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies. Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies.",
-    fees: 2000,
+    fees: 50,
     address: {
       line1: "17th Cross, Richmond",
       line2: "Circle, Ring Road, London",
@@ -109,7 +109,7 @@ export const doctors = [
     experience: "3 Years",
     about:
       "Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies. Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies.",
-    fees: 1500,
+    fees: 45,
     address: {
       line1: "27th Cross, Richmond",
       line2: "Circle, Ring Road, London",
@@ -121,7 +121,7 @@ export const doctors = [
     image: doc3,
     speciality: "Dermatologist",
     degree: "MBBS",
-    experience: "1 Years",
+    experience: "3 Years",
     about:
       "Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies. Dr. Davis has a strong commitment to delivering comprehensive medical care, focusing on preventive medicine, early diagnosis, and effective treatment strategies.",
     fees: 30,

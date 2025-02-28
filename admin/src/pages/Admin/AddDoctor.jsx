@@ -2,7 +2,7 @@ import React, { useContext } from "react";
 import { assets } from "../../assets/assets";
 import { useState } from "react";
 import { AdminContext } from "../../context/AdminContext";
-//import toast from "react-toastify";
+import { toast } from "react-toastify";
 import axios from "axios";
 
 const AddDoctor = () => {
@@ -37,10 +37,7 @@ const AddDoctor = () => {
       formData.append("about", about);
       formData.append("speciality", speciality);
       formData.append("degree", degree);
-      formData.append(
-        "address",
-        JSON.stringify({ line1: address1, line2: address2 })
-      );
+      formData.append("address", { line1: address1, line2: address2 });
 
       //console log formdata
 
