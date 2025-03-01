@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
+//import sslcommerz from 'sslcommerz'
 
 //API to register user
 const registerUser = async (req, res) => {
@@ -184,4 +185,15 @@ const listAppointment = async (req, res)=>{
     
   }
 }
+
+/*const sslcommerzInstance = new sslcommerz({
+  key_id:'',
+  key_secret:''
+})
+
+//Api to make payment of appoinment
+const paymentSslcommerz = async(req,res)=>{
+
+}*/
+
 export { registerUser, loginUser, getProfile, updateProfile, bookAppointment,listAppointment };
