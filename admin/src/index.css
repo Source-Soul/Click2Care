@@ -1,0 +1,18 @@
+@import url("https://fonts.googleapis.com/css2?family=Caesar+Dressing&family=Outfit:wght@100..900&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbar for Webkit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optional: Hide scrollbar for Firefox */
+* {
+  scrollbar-width: none;
+}
+/* Font for all elements*/
+* {
+  font-family: Outfit;
+}
