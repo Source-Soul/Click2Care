@@ -170,7 +170,7 @@ const bookAppointment = async (req, res)=>{
     
   }
 }
-//API
+//API to get user appointments for frontend my-appointmentpage
 const listAppointment = async (req, res)=>{
 
   try {
