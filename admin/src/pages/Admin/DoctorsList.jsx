@@ -8,6 +8,7 @@ const DoctorsList = () => {
 
   useEffect(() => {
     if (aToken) {
+      console.log("Admin:", aToken);
       getAllDoctors();
     }
   }, [aToken]);

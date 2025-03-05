@@ -60,11 +60,12 @@ const Appoinment = () => {
                 let month= currentDate.getMonth()+1
                 let year = currentDate.getFullYear()
 
-                const slotDate=day +"_"+month+ "_"+year
-                const slotTime =formattedTime
+                const slotDate= day +"_"+month+ "_"+year
+                const slotTime = formattedTime 
 
-                const isSlotAvailable= docInfo.slots_booked[slotDate].includes(slotTime) ? false : true
-               if (isSlotAvailable) {
+                const isSlotAvailable= docInfo.slots_booked[slotDate] && docInfo.slots_booked[slotDate].includes(slotTime) ? false : true
+              
+                if (isSlotAvailable) {
                 timeSlots.push({
 
                     datetime: new Date(currentDate),
