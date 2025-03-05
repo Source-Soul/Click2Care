@@ -220,15 +220,3 @@ const cancelAppointment = async (req, res) => {
   }
 }
 export { registerUser, loginUser, getProfile, updateProfile, bookAppointment,listAppointment, cancelAppointment };
-
-/*const sslcommerzInstance = new sslcommerz({
-  key_id:'',
-  key_secret:''
-})
-
-//Api to make payment of appoinment
-const paymentSslcommerz = async(req,res)=>{
-
-}*/
-
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment,listAppointment };
