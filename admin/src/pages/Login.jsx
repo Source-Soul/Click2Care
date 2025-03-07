@@ -1,6 +1,7 @@
 import React, { useContext, useState } from "react";
 import { assets } from "../assets/assets";
 import { AdminContext } from "../context/AdminContext";
+import { DoctorContext } from "../context/DoctorContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 
@@ -10,6 +11,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
 
   const { setAToken, backendUrl } = useContext(AdminContext);
+  const { setDToken } = useContext(DoctorContext);
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
@@ -35,8 +37,9 @@ const Login = () => {
         });
         console.log("Response from backend:", data); // ✅ Debugging line
         if (data.success) {
-          localStorage.setItem("aToken", data.token);
-          setAToken(data.token);
+          localStorage.setItem("dToken", data.token);
+          setDToken(data.token);
+          console.log(data.token);
           toast.success("Login Successful!");
         } else {
           toast.error(data.message || "Login failed. Please try again.");
