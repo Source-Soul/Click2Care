@@ -5,7 +5,8 @@ import jwt from "jsonwebtoken";
 import { v2 as cloudinary } from "cloudinary";
 import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
-//import sslcommerz from 'sslcommerz'
+import sslcommerz from "sslcommerz";
+//import SSLCommerzPayment from "sslcommerz-node";
 
 //API to register user
 const registerUser = async (req, res) => {
@@ -113,122 +114,142 @@ const updateProfile = async (req, res) => {
 };
 
 //API TO BOOK APPOINTMENT
-const bookAppointment = async (req, res)=>{
-
+const bookAppointment = async (req, res) => {
   try {
+    const { userId, docId, slotDate, slotTime } = req.body;
+    const docData = await doctorModel.findById(docId).select("-password");
 
-    const{userId, docId, slotDate,slotTime}=req.body
-    const docData = await doctorModel.findById(docId).select('-password')
-
-    if(!docData.available){
-      return res.json({success:false, message:'Doctor is not available'})
+    if (!docData.available) {
+      return res.json({ success: false, message: "Doctor is not available" });
     }
 
-    let slots_booked = docData.slots_booked
+    let slots_booked = docData.slots_booked;
 
     //checking for slots availability
-    if(slots_booked[slotDate]){
-      if(slots_booked[slotDate].includes(slotTime)){
-        return res.json({success:false, message:'Slot is not available'})
-      }else{
-        slots_booked[slotDate].push(slotTime)
+    if (slots_booked[slotDate]) {
+      if (slots_booked[slotDate].includes(slotTime)) {
+        return res.json({ success: false, message: "Slot is not available" });
+      } else {
+        slots_booked[slotDate].push(slotTime);
       }
-    }else{
-
-      slots_booked[slotDate]=[]
-      slots_booked[slotDate].push(slotTime)
+    } else {
+      slots_booked[slotDate] = [];
+      slots_booked[slotDate].push(slotTime);
     }
 
-    const userData = await userModel.findById(userId).select('-password')
+    const userData = await userModel.findById(userId).select("-password");
 
-    delete docData.slots_booked
-    
+    delete docData.slots_booked;
+
     const appointmentData = {
-
       userId,
       docId,
       userData,
       docData,
-      amount:docData.fees,
+      amount: docData.fees,
       slotTime,
       slotDate,
-      date: Date.now()
-    }
+      date: Date.now(),
+    };
 
-    const newAppointment = new appointmentModel(appointmentData)
+    const newAppointment = new appointmentModel(appointmentData);
     await newAppointment.save();
-
 
     // save new slots data in docData
 
-    await doctorModel.findByIdAndUpdate(docId,{slots_booked})
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
 
-    res.json({success:true, message:'Appointment Booked'})
-
+    res.json({ success: true, message: "Appointment Booked" });
   } catch (error) {
     console.log(error);
-    return res.json({ success: false, message: error.message })
-    
+    return res.json({ success: false, message: error.message });
   }
-}
+};
 //API to get user appointments for frontend my-appointmentpage
-const listAppointment = async (req, res)=>{
-
+const listAppointment = async (req, res) => {
   try {
-
-    const{userId}=req.body
-    const appointments = await appointmentModel.find({userId})
-    res.json({success:true,appointments})
+    const { userId } = req.body;
+    const appointments = await appointmentModel.find({ userId });
+    res.json({ success: true, appointments });
   } catch (error) {
-    console.log(error)
-    req.json({success: false, message: error.message })
-    
+    console.log(error);
+    req.json({ success: false, message: error.message });
   }
-}
+};
 
 // API to cancel Appointment
 const cancelAppointment = async (req, res) => {
-
   try {
-  
-      const {userId, appointmentId} = req.body
-      const appointmentData = await appointmentModel.findById(appointmentId)
-  
-  // verify appointment user
-  
-  if (appointmentData.userId !== userId) {
-  
-    return res.json({success:false, message: "Unauthorized action"});
-  
-  }
-  await appointmentModel.findByIdAndUpdate(appointmentId,{cancelled:true})
-  // releasing doctor slot
+    const { userId, appointmentId } = req.body;
+    const appointmentData = await appointmentModel.findById(appointmentId);
 
-    const {docId, slotDate, slotTime} = appointmentData
-    const doctorData = await doctorModel.findById(docId)
-    let slots_booked = doctorData.slots_booked
-    slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
-    await doctorModel.findByIdAndUpdate(docId,{slots_booked})
-    res.json({success: true, message:'Appointment Cancelled'})
-  
+    // verify appointment user
+
+    if (appointmentData.userId !== userId) {
+      return res.json({ success: false, message: "Unauthorized action" });
+    }
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      cancelled: true,
+    });
+    // releasing doctor slot
+
+    const { docId, slotDate, slotTime } = appointmentData;
+    const doctorData = await doctorModel.findById(docId);
+    let slots_booked = doctorData.slots_booked;
+    slots_booked[slotDate] = slots_booked[slotDate].filter(
+      (e) => e !== slotTime
+    );
+    await doctorModel.findByIdAndUpdate(docId, { slots_booked });
+    res.json({ success: true, message: "Appointment Cancelled" });
   } catch (error) {
-  
-      console.log(error);
-  
-      res.json({ success: false, message: error.message });
-  
+    console.log(error);
+
+    res.json({ success: false, message: error.message });
   }
-}
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment,listAppointment, cancelAppointment };
+};
 
-/*const sslcommerzInstance = new sslcommerz({
-  key_id:'',
-  key_secret:''
-})
+const sslcommerzInstance = async()=> sslcommerz({
+  key_id: process.env.SSL_STORE_ID,
+  key_secret: process.env.SSL_STORE_PASSWORD,
+});
 
-//Api to make payment of appoinment
-const paymentSslcommerz = async(req,res)=>{
+//Api to make payment sslcommerz
+const paymentSslcommerz = async (req, res) => {
+  try {
+    const { appointmentId } = req.body;
+    const appointmentData = await appointmentModel.findById(appointmentId);
 
-}*/
+    if (!appointmentData || appointmentData.cancelled) {
+      return res.json({
+        success: false,
+        message: "Appointment cancelled or not found",
+      });
+    }
 
-export { registerUser, loginUser, getProfile, updateProfile, bookAppointment,listAppointment };
+    //creating options for sslcommerz payment
+    const options = {
+      amount: appointmentData.amount * 100,
+      currency: process.env.CURRENCY,
+      receipt: appointmentId,
+    };
+
+    //creation of an order
+    const order = await sslcommerzInstance.orders.create(options);
+
+    res.json({ succes: true, order });
+  } catch (error) {
+    console.log(error);
+
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export {
+  registerUser,
+  loginUser,
+  getProfile,
+  updateProfile,
+  bookAppointment,
+  listAppointment,
+  cancelAppointment, paymentSslcommerz
+};

@@ -1,21 +1,23 @@
-import React from "react";
-import { useContext } from "react";
-import { AdminContext } from "../../context/AdminContext";
-import { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
+import { DoctorContext } from "../../context/DoctorContext";
 import { AppContext } from "../../context/AppContext";
 import { assets } from "../../assets/assets";
 
-const AllApointments = () => {
-  const { aToken, appointments, getAllAppointments, cancelAppointment } =
-    useContext(AdminContext);
+const DoctorAppointments = () => {
+  const {
+    dToken,
+    appointments,
+    getAppointments,
+    completeAppointment,
+    cancelAppointment,
+  } = useContext(DoctorContext);
   const { calculateAge, slotDateFormat, currency } = useContext(AppContext);
 
   useEffect(() => {
-    if (aToken) {
-      console.log("Admin:", aToken);
-      getAllAppointments();
+    if (dToken) {
+      getAppointments();
     }
-  }, [aToken]);
+  }, [dToken]);
 
   return (
     <div className="w-full max-w-6xl m-5">
@@ -24,14 +26,14 @@ const AllApointments = () => {
         <div className="hidden sm:grid grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] grid-flow-col py-3 px-6 border-b">
           <p>#</p>
           <p>Patient</p>
+          <p>Payment</p>
           <p>Age</p>
           <p>Date & Time</p>
-          <p>Doctor</p>
           <p>Fees</p>
           <p>Actions</p>
         </div>
 
-        {appointments.map((item, index) => (
+        {appointments.reverse().map((item, index) => (
           <div
             className="flex flex-wrap justify-between max-sm:gap-2 sm:grid sm:grid-cols-[0.5fr_3fr_1fr_3fr_3fr_1fr_1fr] items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-50"
             key={index}
@@ -45,6 +47,7 @@ const AllApointments = () => {
               />{" "}
               <p>{item.userData.name}</p>
             </div>
+
             <p className="max-sm:hidden">{calculateAge(item.userData.dob)}</p>
             <p>
               {slotDateFormat(item.slotDate)},{item.slotTime}
@@ -61,18 +64,25 @@ const AllApointments = () => {
               {currency}
               {item.amount}
             </p>
-            {
-            item.cancelled 
-            ? (
+            {item.cancelled ? (
               <p className="text-red-400 test-xs font-medium">Cancelled</p>
-            ) 
-            : (
-              <img
-                onClick={() => cancelAppointment(item._id)}
-                className="w-10 cursor-pointer"
-                src={assets.cancel_icon}
-                alt=""
-              />
+            ) : item.isCompleted ? (
+              <p className="text-green-500 test-xs font-medium">Completed</p>
+            ) : (
+              <div className="flex">
+                <img
+                  onClick={() => cancelAppointment(item._id)}
+                  className="w-10 cursor-pointer"
+                  src={assets.cancel_icon}
+                  alt=""
+                />
+                <img
+                  onClick={() => completeAppointment(item._id)}
+                  className="w-10 cursor-pointer"
+                  src={assets.tick_icon}
+                  alt=""
+                />
+              </div>
             )}
           </div>
         ))}
@@ -81,4 +91,4 @@ const AllApointments = () => {
   );
 };
 
-export default AllApointments;
+export default DoctorAppointments;
