@@ -3,65 +3,88 @@ import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
 const MyAppoinments = () => {
-  const { backendUrl, token , getDoctorsData} = useContext(AppContext);
+  const { backendUrl, token, getDoctorsData } = useContext(AppContext);
 
-  const [appointments,setAppointments]= useState([])
+  const [appointments, setAppointments] = useState([]);
 
   const months = [
-   " ", "JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
-    "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+    " ",
+    "JAN",
+    "FEB",
+    "MAR",
+    "APR",
+    "MAY",
+    "JUN",
+    "JUL",
+    "AUG",
+    "SEP",
+    "OCT",
+    "NOV",
+    "DEC",
   ];
-  const slotDateFormat =(slotDate)=>{
-    const dateArray = slotDate.split('_')
-    return dateArray[0]+ " "+months[Number(dateArray[1])]+ " "+dateArray[2]
+  const slotDateFormat = (slotDate) => {
+    const dateArray = slotDate.split("_");
+    return (
+      dateArray[0] + " " + months[Number(dateArray[1])] + " " + dateArray[2]
+    );
+  };
 
-  }
-
-  const getUserAppointments= async()=>{
-
+  const getUserAppointments = async () => {
     try {
-      const{data}=await axios.get(backendUrl+ '/api/user/appointments',{headers:{token}})
+      const { data } = await axios.get(backendUrl + "/api/user/appointments", {
+        headers: { token },
+      });
       if (data.success) {
-        setAppointments(data.appointments.reverse())
+        setAppointments(data.appointments.reverse());
         console.log(data.appointments);
-        
       }
-      
-    } catch (error) {
-      console.log(error);
-      toast.error(error.message)
-    }
-  }
-
-  const cancelAppointment = async (appointmentId) => {
-    try {
-      const { data } = await axios.post(
-        backendUrl + '/api/user/cancel-appointment', 
-        { appointmentId },
-        { headers: { token } }
-      );
-  
-      if (data.success) {
-        toast.success(data.message);
-        getUserAppointments();
-        getDoctorsData()
-      } else {
-        toast.error(data.message);
-      }
-  
     } catch (error) {
       console.log(error);
       toast.error(error.message);
     }
   };
-  
-    
 
-  useEffect(()=>{
-    if (token) {
-      getUserAppointments()
+  const cancelAppointment = async (appointmentId) => {
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/user/cancel-appointment",
+        { appointmentId },
+        { headers: { token } }
+      );
+
+      if (data.success) {
+        toast.success(data.message);
+        getUserAppointments();
+        getDoctorsData();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message);
     }
-  },[token])
+  };
+
+  const paymentSslcommerz = async (appointmentId) => {
+    //console.log("appointmentSslcommerz function called with:", appointmentId);
+    try {
+      const { data } = await axios.post(
+        backendUrl + "/api/user/payment-sslcommerz",
+        { appointmentId },
+        { headers: { token } }
+      );
+
+      if (data.success) {
+        console.log(data.order);
+      }
+    } catch (error) {}
+  };
+
+  useEffect(() => {
+    if (token) {
+      getUserAppointments();
+    }
+  }, [token]);
 
   return (
     <div>
@@ -75,7 +98,11 @@ const MyAppoinments = () => {
             key={index}
           >
             <div>
-              <img className="w-32 bg-indigo-50" src={item.docData.image} alt="" />
+              <img
+                className="w-32 bg-indigo-50"
+                src={item.docData.image}
+                alt=""
+              />
             </div>
             <div className="flex-1 text-sm text-zinc-600">
               <p className="text-neutral-800">{item.docData.name}</p>
@@ -92,8 +119,13 @@ const MyAppoinments = () => {
             </div>
             <div></div>
             <div className="flex flex-col gap-2 justify-end">
-            {!item.cancelled && <button
-                className="text-sm
+              {!item.cancelled && (
+                <button
+                  onClick={() => {
+                    console.log("Button clicked");
+                    paymentSslcommerz(item._id);
+                  }}
+                  className="text-sm
                 text-stone-500
                 text-center
                 sm:min-w-48
@@ -104,11 +136,14 @@ const MyAppoinments = () => {
                 hover:text-white
                 transition-all
                 duration-300"
-              >
-                Pay Online
-              </button> }
-              {!item.cancelled && <button onClick={()=>cancelAppointment(item._id)}
-                className="text-sm
+                >
+                  Pay Online
+                </button>
+              )}
+              {!item.cancelled && (
+                <button
+                  onClick={() => cancelAppointment(item._id)}
+                  className="text-sm
                 text-stone-500
                 text-center
                 sm:min-w-48
@@ -119,15 +154,15 @@ const MyAppoinments = () => {
                 hover:text-white
                 transition-all
                 duration-300"
-              >
-                Cancel Appointment
-              </button>   }
+                >
+                  Cancel Appointment
+                </button>
+              )}
               {item.cancelled && (
                 <button className="sm:min-w-48 py-2 px-4 border border-red-500 rounded-lg text-red-500 bg-red-50 hover:bg-orange-700 hover:text-white transition">
                   Appointment Cancelled
                 </button>
-)}
-
+              )}
             </div>
           </div>
         ))}
