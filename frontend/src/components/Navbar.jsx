@@ -19,24 +19,86 @@ const Navbar = () => {
         src={assets.logo}
         alt=""
       />
-      <ul className="hidden md:flex items-start gap-5 font-medium">
-        <NavLink to={"/"}>
-          <li className="py-1">HOME</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to={"/doctors"}>
-          <li className="py-1">ALL DOCTORS</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to={"/about"}>
-          <li className="py-1">ABOUT</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-        <NavLink to={"/contact"}>
-          <li className="py-1">CONTACT</li>
-          <hr className="border-none outline-none h-0.5 bg-primary w-3/5 m-auto hidden" />
-        </NavLink>
-      </ul>
+    <ul className="hidden md:flex items-start gap-5 font-medium">
+      <NavLink to={"/"} className="nav-box">
+        <li className="nav-item">HOME</li>
+        <hr className="nav-underline" />
+      </NavLink>
+      <NavLink to={"/doctors"} className="nav-box">
+        <li className="nav-item">ALL DOCTORS</li>
+        <hr className="nav-underline" />
+      </NavLink>
+      <NavLink to={"/about"} className="nav-box">
+        <li className="nav-item">ABOUT</li>
+        <hr className="nav-underline" />
+      </NavLink>
+      <NavLink to={"/contact"} className="nav-box">
+        <li className="nav-item">CONTACT</li>
+        <hr className="nav-underline" />
+      </NavLink>
+
+      {/* Custom Styles */}
+      <style>{`
+        /* Box Styling */
+        .nav-box {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 150px;
+          height: 50px;
+          background-color: #ffffff;
+          border: 2px solid #4CAF50;
+          border-radius: 8px;
+          transition: all 0.3s ease-in-out;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-box:hover {
+          background-color: #4CAF50;
+          transform: scale(1.1);
+          box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+        }
+
+        .nav-item {
+          color: #4CAF50;
+          transition: color 0.3s ease-in-out;
+        }
+
+        .nav-box:hover .nav-item {
+          color: white;
+          text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+          animation: blink 0.7s infinite alternate;
+        }
+
+        /* Underline Animation */
+        .nav-box:hover .nav-underline {
+          display: block;
+          animation: underlineGrow 0.4s ease-in-out forwards;
+        }
+
+        .nav-underline {
+          display: none;
+          height: 2px;
+          background-color: white;
+          width: 0;
+          transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out;
+        }
+
+        /* Blinking Text Animation */
+        @keyframes blink {
+          0% { opacity: 1; }
+          50% { opacity: 0.6; }
+          100% { opacity: 1; }
+        }
+
+        /* Underline Growing Animation */
+        @keyframes underlineGrow {
+          0% { width: 0; opacity: 0; }
+          100% { width: 70%; opacity: 1; }
+        }
+      `}</style>
+    </ul>
       <div className="flex items-center gap-4">
         {token && userData ? (
           <div className="flex items-center gap-2 cursor-pointer group relative">

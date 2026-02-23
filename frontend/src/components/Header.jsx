@@ -1,42 +1,64 @@
 import React from "react";
 import { assets } from "../assets/assets";
 
-const Hearder = () => {
+const Header = () => {
   return (
-    <div className="flex flex-col md:flex-row flex-row flex-wrap bg-primary rounded-lg px-6 md:px-10 lg:px-20">
-      {/*---------------LEFT SIDE----------*/}
-      <div className="md:w-1/2 flex flex-col items-start justify-center gap-4 py-10 m-auto md:py-[10vw] md:mb-[-30px]">
-        <p className="text-3xl md:text-4xl lg:text-5xl text-white font-semibold leading-tight md:leading-tight lg:leading-tight">
-          Book Appointment <br /> With Trusted Doctors
+    <div className="flex flex-col md:flex-row items-center bg-primary rounded-2xl px-6 md:px-12 lg:px-20 py-12 relative overflow-hidden transition-all duration-300 hover:bg-green-800">
+      {/* Left Side */}
+      <div className="md:w-1/2 flex flex-col items-start justify-center gap-6 text-white z-10">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-snug animate-glow">
+          Book Appointments <br /> With Trusted Doctors
+        </h1>
+        <p className="text-base md:text-lg font-light max-w-md transition-transform hover:scale-105">
+        Easily explore a comprehensive directory of trusted doctors and schedule your appointment with convenience and confidence.
         </p>
-        <div className="flex flex-col md:flex-row items-center gap-3 text-white text-sm font-light ">
-          <img className="w-28" src={assets.group_profiles} alt="" />
-          <p>
-            Simply browse through extensive list of trusted doctors,{" "}
-            <br className="hidden sm:block" /> schedule your appointment
-            hassle-free.
-          </p>
+        <div className="flex items-center gap-4">
+          <img className="w-24 animate-pulse" src={assets.group_profiles} alt="Group Profiles" />
+          <a
+            href="#speciality"
+            className="flex items-center gap-2 bg-white text-primary px-6 py-3 rounded-full font-medium shadow-md hover:bg-gray-100 transition-transform transform hover:scale-110"
+          >
+            Book Appointment
+            <img className="w-4" src={assets.arrow_icon} alt="Arrow" />
+          </a>
         </div>
-        <a
-          href="#speciality"
-          className="flex items-center gap-2 bg-white px-8 py-3 rounded-full text-gray-600 text-sm m-auto md:m-0 hover:scale-105 transition-all duration-30"
-        >
-          Book appointment{" "}
-          <img className="w-3" src={assets.arrow_icon} alt="" />
-        </a>
       </div>
 
-      {/*----------Right Side---------- */}
-
-      <div className="md:w-1/2 relative">
+      {/* Right Side */}
+      <div className="md:w-1/2 relative flex justify-center md:justify-end">
         <img
-          className="w-full md:absolute bottom-0 h-auto rounded-lg"
+          className="w-[85%] md:w-[95%] lg:w-full max-w-md md:max-w-lg rounded-xl object-cover animate-float"
           src={assets.header_img}
-          alt=""
+          alt="Doctor Consultation"
         />
       </div>
+
+      {/* Logo (Centered at Bottom) */}
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+        <img 
+          src={assets.logo} 
+          alt="Logo" 
+          className="w-32 md:w-40 lg:w-48 opacity-50" // Increased width and added opacity
+        />
+      </div>
+
+      {/* Custom Styles */}
+      <style>{`
+        @keyframes glow {
+          0% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+          50% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+          100% { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+        }
+        .animate-glow { animation: glow 2.5s infinite alternate ease-in-out; }
+        
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .animate-float { animation: float 4s infinite ease-in-out; }
+      `}</style>
     </div>
   );
 };
 
-export default Hearder;
+export default Header;

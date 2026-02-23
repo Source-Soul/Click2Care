@@ -4,8 +4,19 @@ import { assets } from '../assets/assets'
 const Contact = () => {
   return (
     <div>
-      <div className='text-center text-2xl pt-10 text-gray-500'>
-        <p>CONTACT <span className='text-gray-700 font-semibold'>US</span> </p>
+      {/* ABOUT US SECTION */}
+      <div className="text-center relative">
+        <div className="w-20 h-1 bg-green-500 mx-auto mb-2"></div>
+        <p
+          className="text-3xl font-bold text-gray-700"
+          style={{
+            animation: "glow 1.5s infinite alternate",
+            textShadow: "0 0 5px rgba(34, 197, 94, 0.6)",
+          }}
+        >
+          CONTACT <span className="text-primary">US</span>
+        </p>
+        <div className="w-20 h-1 bg-green-500 mx-auto mt-2"></div>
       </div>
       <div className='my-10 flex flex-col justify-center md:flex-row gap-10 mb-28 text-sm'>
 
@@ -23,7 +34,16 @@ const Contact = () => {
       </div>
         
       </div>  
-
+                {/* Inline CSS for Glow Effect */}
+      <style>
+        {`
+          @keyframes glow {
+            0% { text-shadow: 0 0 5px rgba(34, 197, 94, 0.6); }
+            50% { text-shadow: 0 0 15px rgba(34, 197, 94, 0.8); }
+            100% { text-shadow: 0 0 5px rgba(34, 197, 94, 0.6); }
+          }
+        `}
+      </style>
     </div>
   )
 }
