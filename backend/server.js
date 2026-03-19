@@ -6,12 +6,16 @@ import conneCloudinary from "./config/cloudnary.js";
 import adminRouter from "./routes/adminRoute.js";
 import doctorRouter from "./routes/doctorRoute.js";
 import userRouter from "./routes/userRoute.js";
+import { initializeNoShowDetection } from "./utils/appointmentService.js";
 
 //app config
 const app = express();
 const port = process.env.PORT || 4000;
 connectDB();
 conneCloudinary();
+
+// Initialize background tasks
+initializeNoShowDetection();
 
 //middlewares
 app.use(express.json());
