@@ -2,6 +2,8 @@ import appointmentModel from "../models/appointmentModel.js";
 import doctorModel from "../models/doctorModel.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { sendNotification } from "../utils/notificationService.js";
+import { cancelAppointmentWithRefund } from "../utils/appointmentService.js";
 const changeAvailability = async (req, res) => {
   try {
     const { docId } = req.body;
@@ -161,6 +163,174 @@ const updateDoctorProfile = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
+// API to get doctor's video consultations
+const getDoctorVideoConsultations = async (req, res) => {
+  try {
+    const { docId } = req.body;
+
+    const videoConsultations = await appointmentModel.find({
+      docId,
+      appointmentType: "video",
+    });
+
+    res.json({
+      success: true,
+      videoConsultations,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API for doctor to cancel video consultation
+const cancelVideoConsultation = async (req, res) => {
+  try {
+    const { docId, appointmentId } = req.body;
+
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // Verify doctor owns this appointment
+    if (appointment.docId !== docId) {
+      return res.json({ success: false, message: "Unauthorized action" });
+    }
+
+    // Cancel appointment with refund
+    const result = await cancelAppointmentWithRefund(appointmentId, "doctor");
+
+    if (result.success) {
+      // Send cancellation notification to patient
+      await sendNotification({
+        type: "cancellation",
+        appointment,
+        refundInfo: result.refundInfo,
+        recipientType: "patient",
+        cancelledBy: "doctor",
+      });
+
+      res.json({
+        success: true,
+        message: result.message,
+        refundInfo: result.refundInfo,
+      });
+    } else {
+      res.json({ success: false, message: result.message });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API to mark video consultation as completed
+const completeVideoConsultation = async (req, res) => {
+  try {
+    const { docId, appointmentId } = req.body;
+
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // Verify doctor owns this appointment
+    if (appointment.docId !== docId) {
+      return res.json({ success: false, message: "Unauthorized action" });
+    }
+
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      isCompleted: true,
+      noShow: false,
+    });
+
+    res.json({
+      success: true,
+      message: "Video consultation marked as completed",
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API for doctor to mark video meeting as joined
+const markVideoMeetingJoined = async (req, res) => {
+  try {
+    const { docId, appointmentId } = req.body;
+
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // Verify doctor owns this appointment
+    if (appointment.docId.toString() !== docId.toString()) {
+      return res.json({
+        success: false,
+        message: "Unauthorized: Not your appointment",
+      });
+    }
+
+    // Update appointment with doctor join time
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      "videoConsultationData.doctorJoinedAt": Date.now(),
+      noShow: false,
+    });
+
+    console.log("Doctor marked as joined:", appointmentId);
+
+    res.json({
+      success: true,
+      message: "Doctor marked as joined",
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// API for doctor to mark video meeting as left
+const markVideoMeetingLeft = async (req, res) => {
+  try {
+    const { docId, appointmentId } = req.body;
+
+    const appointment = await appointmentModel.findById(appointmentId);
+
+    if (!appointment) {
+      return res.json({ success: false, message: "Appointment not found" });
+    }
+
+    // Verify doctor owns this appointment
+    if (appointment.docId.toString() !== docId.toString()) {
+      return res.json({
+        success: false,
+        message: "Unauthorized: Not your appointment",
+      });
+    }
+
+    // Update appointment with doctor leave time
+    await appointmentModel.findByIdAndUpdate(appointmentId, {
+      "videoConsultationData.doctorLeftAt": Date.now(),
+    });
+
+    console.log("Doctor marked as left:", appointmentId);
+
+    res.json({
+      success: true,
+      message: "Doctor marked as left",
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
 export {
   changeAvailability,
   doctorList,
@@ -171,4 +341,9 @@ export {
   doctorDashboard,
   doctorProfile,
   updateDoctorProfile,
+  getDoctorVideoConsultations,
+  cancelVideoConsultation,
+  completeVideoConsultation,
+  markVideoMeetingJoined,
+  markVideoMeetingLeft,
 };

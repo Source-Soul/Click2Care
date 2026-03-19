@@ -22,7 +22,7 @@ const Login = () => {
           email,
           password,
         });
-        console.log("Response from backend:", data); // ✅ Debugging line
+        console.log("Response from backend:", data); // Debugging line
         if (data.success) {
           localStorage.setItem("aToken", data.token);
           setAToken(data.token);
@@ -35,7 +35,7 @@ const Login = () => {
           email,
           password,
         });
-        console.log("Response from backend:", data); // ✅ Debugging line
+        console.log("Response from backend:", data); 
         if (data.success) {
           localStorage.setItem("dToken", data.token);
           setDToken(data.token);
@@ -48,7 +48,7 @@ const Login = () => {
     } catch (error) {
       console.error("Login Error:", error);
       toast.error(
-        error.response?.data?.message || "Login failed. Please try again."
+        error.response?.data?.message || "Login failed. Please try again.",
       );
     }
   };

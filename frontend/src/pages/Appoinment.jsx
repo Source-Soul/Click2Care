@@ -18,6 +18,7 @@ const Appoinment = () => {
   const [docSlots, setDocSlots] = useState([]); //Doctor time-Schedule
   const [slotIndex, setSlotIndex] = useState(0);
   const [slotTime, setSlotTime] = useState("");
+  const [appointmentType, setAppointmentType] = useState("offline"); // 'offline' or 'video'
 
   const fetchDocInfo = async () => {
     const docInfo = doctors.find((doc) => doc._id === docId);
@@ -45,12 +46,14 @@ const Appoinment = () => {
 
       //setting hours
       if (today.getDate() === currentDate.getDate()) {
+        // For today: start from next available slot after current time, minimum 8:00 AM
         currentDate.setHours(
-          currentDate.getHours() > 10 ? currentDate.getHours() + 1 : 10,
+          currentDate.getHours() > 8 ? currentDate.getHours() + 1 : 8,
         );
         currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0);
       } else {
-        currentDate.setHours(10);
+        // For future days: start from 8:00 AM
+        currentDate.setHours(8);
         currentDate.setMinutes(0);
       }
 
@@ -70,21 +73,29 @@ const Appoinment = () => {
         const slotTime = formattedTime;
 
         const bookedSlots = docInfo.slots_booked || {};
-        const isSlotAvailable =
+        const isSlotBooked =
           bookedSlots[slotDate] && bookedSlots[slotDate].includes(slotTime)
-            ? false
-            : true;
+            ? true
+            : false;
 
-        if (isSlotAvailable) {
+        // Check if slot is in the past (for today only)
+        let isSlotInPast = false;
+        if (i === 0) {
+          // Today's date
+          const now = new Date();
+          const isTimePassedForToday = currentDate <= now;
+          isSlotInPast = isTimePassedForToday;
+        }
+
+        // Only add slot if it's not booked, not in past, and within business hours
+        if (!isSlotBooked && !isSlotInPast) {
           timeSlots.push({
             datetime: new Date(currentDate),
             time: formattedTime,
           });
         }
 
-        // add slots to array
-
-        //increment current by 30 minutes
+        // Increment current by 30 minutes
         currentDate.setMinutes(currentDate.getMinutes() + 30);
       }
       setDocSlots((prev) => [...prev, timeSlots]);
@@ -110,19 +121,32 @@ const Appoinment = () => {
       let year = date.getFullYear();
 
       const slotDate = day + "_" + month + "_" + year;
-      //console.log(slotDate)
 
-      const { data } = await axios.post(
-        backendUrl + "/api/user/book-appointment",
-        { docId, slotDate, slotTime },
-        { headers: { token } },
-      );
-      if (data.success) {
-        toast.success(data.message);
-        getDoctorsData();
-        navigate("/my-appointments");
+      if (appointmentType === "video") {
+        // Navigate to form WITHOUT creating appointment
+        // Pass booking details as state
+        navigate("/video-consultation", {
+          state: {
+            docId,
+            slotDate,
+            slotTime,
+            docInfo,
+          },
+        });
       } else {
-        toast.error(data.message);
+        // Book offline appointment (existing logic)
+        const { data } = await axios.post(
+          backendUrl + "/api/user/book-appointment",
+          { docId, slotDate, slotTime },
+          { headers: { token } },
+        );
+        if (data.success) {
+          toast.success(data.message);
+          getDoctorsData();
+          navigate("/my-appointments");
+        } else {
+          toast.error(data.message);
+        }
       }
     } catch (error) {
       console.log(error);
@@ -187,6 +211,35 @@ const Appoinment = () => {
           </div>
         </div>
 
+        {/*.....Appointment Type Selection .....*/}
+        <div className="sm:ml-72 sm:pl-4 mt-6 font-medium text-gray-700">
+          <p className="text-lg font-semibold text-gray-800 border-b-2 border-gray-300 pb-1">
+            Choose Appointment Type
+          </p>
+          <div className="flex gap-4 mt-4">
+            <button
+              onClick={() => setAppointmentType("offline")}
+              className={`flex-1 py-4 px-6 rounded-lg font-semibold transition-all duration-300 ${
+                appointmentType === "offline"
+                  ? "bg-primary text-white shadow-lg"
+                  : "border-2 border-gray-400 text-gray-700 hover:border-primary"
+              }`}
+            >
+              Offline Consultation
+            </button>
+            <button
+              onClick={() => setAppointmentType("video")}
+              className={`flex-1 py-4 px-6 rounded-lg font-semibold transition-all duration-300 ${
+                appointmentType === "video"
+                  ? "bg-primary text-white shadow-lg"
+                  : "border-2 border-gray-400 text-gray-700 hover:border-primary"
+              }`}
+            >
+              Video Consultation
+            </button>
+          </div>
+        </div>
+
         {/*.....Booking Slots .....*/}
         <div className="sm:ml-72 sm:pl-4 mt-4 font-medium text-gray-700 ">
           <p className="text-lg font-semibold text-gray-800 border-b-2 border-gray-300 pb-1">
@@ -224,7 +277,9 @@ const Appoinment = () => {
             onClick={bookAppointment}
             className="bg-green-600 hover:bg-green-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 mt-6"
           >
-            Book an Appointment
+            {appointmentType === "video"
+              ? "Proceed to Video Consultation Form"
+              : "Book an Appointment"}
           </button>
         </div>
 

@@ -7,6 +7,15 @@ import {
   bookAppointment,
   listAppointment,
   cancelAppointment,
+  initiateVideoConsultation,
+  createVideoConsultation,
+  confirmVideoConsultation,
+  getAppointmentDetails,
+  validateMeetingJoin,
+  markAppointmentJoined,
+  markAppointmentLeft,
+  markAppointmentCompleted,
+  checkAndMarkNoShow,
 } from "../controllers/userController.js";
 import authUser from "../middleware/authUser.js";
 import upload from "../middleware/multer.js";
@@ -26,5 +35,28 @@ userRouter.post(
 userRouter.post("/book-appointment", authUser, bookAppointment);
 userRouter.get("/appointments", authUser, listAppointment);
 userRouter.post("/cancel-appointment", authUser, cancelAppointment);
+
+// Video Consultation Routes
+userRouter.post(
+  "/initiate-video-consultation",
+  authUser,
+  initiateVideoConsultation,
+);
+userRouter.post(
+  "/create-video-consultation",
+  authUser,
+  createVideoConsultation,
+);
+userRouter.post(
+  "/confirm-video-consultation",
+  authUser,
+  confirmVideoConsultation,
+);
+userRouter.post("/appointment-details", authUser, getAppointmentDetails);
+userRouter.post("/validate-meeting-join", authUser, validateMeetingJoin);
+userRouter.post("/mark-joined", authUser, markAppointmentJoined);
+userRouter.post("/mark-left", authUser, markAppointmentLeft);
+userRouter.post("/mark-completed", authUser, markAppointmentCompleted);
+userRouter.post("/check-no-show", authUser, checkAndMarkNoShow);
 
 export default userRouter;
