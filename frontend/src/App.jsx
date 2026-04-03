@@ -10,7 +10,7 @@ import MyProfile from "./pages/MyProfile";
 import Navbar from "./components/Navbar";
 import Fotter from "./components/Fotter";
 import Appoinment from "./pages/Appoinment";
-import VideoConsultationForm from "./pages/VideoConsultationForm";
+import PaymentConfirmationForm from "./pages/PaymentConfirmationForm";
 import VideoMeeting from "./pages/VideoMeeting";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -30,7 +30,7 @@ const App = () => {
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/my-appointments" element={<MyAppoinments />} />
         <Route path="/appoinment/:docId" element={<Appoinment />} />
-        <Route path="/video-consultation" element={<VideoConsultationForm />} />
+        <Route path="/book-appointment" element={<PaymentConfirmationForm />} />
         <Route
           path="/video-meeting/:appointmentId"
           element={<VideoMeeting />}

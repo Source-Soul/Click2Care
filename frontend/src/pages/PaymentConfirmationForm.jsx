@@ -4,13 +4,14 @@ import { AppContext } from "../context/AppContext";
 import { toast } from "react-toastify";
 import axios from "axios";
 
-const VideoConsultationForm = () => {
+const PaymentConfirmationForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { backendUrl, token, getDoctorsData } = useContext(AppContext);
 
-  // Get booking details from navigation state
-  const { docId, slotDate, slotTime, docInfo } = location.state || {};
+  // Get booking details from navigation state (including appointmentType)
+  const { docId, slotDate, slotTime, docInfo, appointmentType } =
+    location.state || {};
 
   const [loading, setLoading] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
@@ -23,6 +24,10 @@ const VideoConsultationForm = () => {
     patientEmail: "",
     patientPhone: "",
   });
+
+  // Determine if the flow is for video or offline based on passed state
+  const isVideo = appointmentType === "video";
+  const displayType = isVideo ? "Video Consultation" : "In-Clinic Consultation";
 
   // Redirect if no booking details
   if (!docId || !slotDate || !slotTime || !docInfo) {
@@ -51,7 +56,7 @@ const VideoConsultationForm = () => {
     }));
   };
 
-  const submitVideoConsultation = async () => {
+  const submitPaymentConfirmation = async () => {
     try {
       setLoading(true);
       setPaymentProcessing(true);
@@ -89,24 +94,34 @@ const VideoConsultationForm = () => {
       // Simulate payment processing
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
+      // Dynamically select the API endpoint based on appointment type
+      const endpoint = isVideo
+        ? "/api/user/create-video-consultation"
+        : "/api/user/book-appointment"; // Ensure this matches your backend's offline route
+
       // Create appointment AND confirm in one API call
       const { data } = await axios.post(
-        backendUrl + "/api/user/create-video-consultation",
+        backendUrl + endpoint,
         {
           docId,
           slotDate,
           slotTime,
+          appointmentType, // Passing type just in case your backend uses a unified route later
           patientName: formData.patientName,
           patientEmail: formData.patientEmail,
           patientPhone: formData.patientPhone,
         },
-        { headers: { token } },
+        { headers: { token } }
       );
 
       if (data.success) {
-        toast.success("Video consultation confirmed!");
-        setAppointmentId(data.appointmentId);
-        setMeetingLink(data.meetingLink);
+        toast.success(`${displayType} confirmed!`);
+        setAppointmentId(data.appointmentId || data.id); // Ensure fallback if API differs
+
+        if (isVideo) {
+          setMeetingLink(data.meetingLink);
+        }
+
         setConfirmationComplete(true);
         getDoctorsData(); // Refresh available slots
       } else {
@@ -149,7 +164,7 @@ const VideoConsultationForm = () => {
     return `${dayName}, ${day} ${months[month - 1]} ${year}`;
   };
 
-  if (confirmationComplete && appointmentId && meetingLink) {
+  if (confirmationComplete) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
@@ -161,14 +176,16 @@ const VideoConsultationForm = () => {
               Booking Confirmed!
             </h1>
             <p className="text-gray-600">
-              Your video consultation is confirmed. Save your meeting link
-              below.
+              Your {displayType.toLowerCase()} is confirmed.{" "}
+              {isVideo
+                ? "Save your meeting link below."
+                : "We look forward to seeing you at the clinic."}
             </p>
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-left">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Meeting Details
+              {isVideo ? "Meeting Details" : "Appointment Details"}
             </h2>
             <div className="space-y-3">
               <div>
@@ -183,23 +200,27 @@ const VideoConsultationForm = () => {
                   {slotDateFormat(slotDate)} at {slotTime}
                 </p>
               </div>
-              
             </div>
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left">
             <p className="text-sm text-gray-700">
-              <span className="font-semibold">Note:</span> Join the meeting on scheduled date and time. Make sure to have a stable internet connection and a quiet environment for the consultation.
+              <span className="font-semibold">Note:</span>{" "}
+              {isVideo
+                ? "Join the meeting on the scheduled date and time. Make sure to have a stable internet connection and a quiet environment for the consultation."
+                : "Please arrive at the clinic 10 minutes prior to your scheduled time to complete any necessary paperwork."}
             </p>
           </div>
 
           <div className="flex gap-4 justify-center">
-            <button
-              onClick={() => navigate(`/video-meeting/${appointmentId}`)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              Join Meeting Now
-            </button>
+            {isVideo && meetingLink && (
+              <button
+                onClick={() => navigate(`/video-meeting/${appointmentId}`)}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
+              >
+                Join Meeting Now
+              </button>
+            )}
             <button
               onClick={() => navigate("/my-appointments")}
               className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
@@ -215,9 +236,7 @@ const VideoConsultationForm = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Video Consultation
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-2">{displayType}</h1>
         <p className="text-gray-600 mb-6">
           Complete your details to confirm the booking
         </p>
@@ -253,13 +272,13 @@ const VideoConsultationForm = () => {
             <div>
               <p className="text-sm text-gray-600">Fee</p>
               <p className="text-lg font-semibold text-green-600">
-                ₹{docInfo?.fees}
+                ${docInfo?.fees}
               </p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Type</p>
               <p className="text-lg font-semibold text-gray-800">
-                 Video Consultation
+                {displayType}
               </p>
             </div>
           </div>
@@ -325,12 +344,12 @@ const VideoConsultationForm = () => {
             <div className="flex justify-between items-center">
               <span className="text-gray-700">Consultation Fee</span>
               <span className="text-lg font-semibold text-gray-800">
-                ₹{docInfo?.fees}
+                ${docInfo?.fees}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-700">Taxes & Charges</span>
-              <span className="text-lg font-semibold text-gray-800">₹0</span>
+              <span className="text-lg font-semibold text-gray-800">$0</span>
             </div>
             <div className="border-t border-blue-200 pt-3">
               <div className="flex justify-between items-center">
@@ -338,7 +357,7 @@ const VideoConsultationForm = () => {
                   Total Amount
                 </span>
                 <span className="text-2xl font-bold text-blue-600">
-                  ₹{docInfo?.fees}
+                  ${docInfo?.fees}
                 </span>
               </div>
             </div>
@@ -348,17 +367,17 @@ const VideoConsultationForm = () => {
         {/* Terms */}
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
           <p className="text-sm text-gray-700">
-            <span className="font-semibold">Before confirming:</span> Please
-            ensure you have a stable internet connection and a working camera
-            and microphone for the video consultation. After payment, you'll
-            receive a video consultation link via email.
+            <span className="font-semibold">Before confirming:</span>{" "}
+            {isVideo
+              ? "Please ensure you have a stable internet connection and a working camera and microphone for the video consultation. After payment, you'll receive a video consultation link via email."
+              : "Please confirm your availability to travel to the clinic at the scheduled date and time."}
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-4">
           <button
-            onClick={submitVideoConsultation}
+            onClick={submitPaymentConfirmation}
             disabled={loading || paymentProcessing}
             className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition flex items-center justify-center gap-2"
           >
@@ -383,4 +402,4 @@ const VideoConsultationForm = () => {
   );
 };
 
-export default VideoConsultationForm;
+export default PaymentConfirmationForm;
