@@ -48,7 +48,7 @@ const Appoinment = () => {
       if (today.getDate() === currentDate.getDate()) {
         // For today: start from next available slot after current time, minimum 8:00 AM
         currentDate.setHours(
-          currentDate.getHours() > 8 ? currentDate.getHours() + 1 : 8,
+          currentDate.getHours() > 8 ? currentDate.getHours() + 1 : 8
         );
         currentDate.setMinutes(currentDate.getMinutes() > 30 ? 30 : 0);
       } else {
@@ -121,33 +121,15 @@ const Appoinment = () => {
       let year = date.getFullYear();
 
       const slotDate = day + "_" + month + "_" + year;
-
-      if (appointmentType === "video") {
-        // Navigate to form WITHOUT creating appointment
-        // Pass booking details as state
-        navigate("/video-consultation", {
-          state: {
-            docId,
-            slotDate,
-            slotTime,
-            docInfo,
-          },
-        });
-      } else {
-        // Book offline appointment (existing logic)
-        const { data } = await axios.post(
-          backendUrl + "/api/user/book-appointment",
-          { docId, slotDate, slotTime },
-          { headers: { token } },
-        );
-        if (data.success) {
-          toast.success(data.message);
-          getDoctorsData();
-          navigate("/my-appointments");
-        } else {
-          toast.error(data.message);
-        }
-      }
+      navigate("/book-appointment", {
+        state: {
+          docId,
+          slotDate,
+          slotTime,
+          docInfo,
+          appointmentType, // 'offline' or 'video'
+        },
+      });
     } catch (error) {
       console.log(error);
       toast.error(error.message);
@@ -251,7 +233,11 @@ const Appoinment = () => {
               docSlots.map((item, index) => (
                 <div
                   onClick={() => setSlotIndex(index)}
-                  className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${slotIndex === index ? "bg-primary text-white" : "border border-black"}`}
+                  className={`text-center py-6 min-w-16 rounded-full cursor-pointer ${
+                    slotIndex === index
+                      ? "bg-primary text-white"
+                      : "border border-black"
+                  }`}
                   key={index}
                 >
                   <p>{item[0] && daysOfWeek[item[0].datetime.getDay()]}</p>
@@ -266,7 +252,11 @@ const Appoinment = () => {
                 <p
                   onClick={() => setSlotTime(item.time)}
                   className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer min-w-[100px] 
-                        ${item.time === slotTime ? "bg-primary text-white" : "text-gray-800 border border-black"}`}
+                        ${
+                          item.time === slotTime
+                            ? "bg-primary text-white"
+                            : "text-gray-800 border border-black"
+                        }`}
                   key={index}
                 >
                   {item.time.toLowerCase()}
@@ -277,9 +267,7 @@ const Appoinment = () => {
             onClick={bookAppointment}
             className="bg-green-600 hover:bg-green-800 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 mt-6"
           >
-            {appointmentType === "video"
-              ? "Proceed to Video Consultation Form"
-              : "Book an Appointment"}
+            Book Appointment
           </button>
         </div>
 
