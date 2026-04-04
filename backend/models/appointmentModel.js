@@ -10,42 +10,40 @@ const appointmentSchema = new mongoose.Schema({
   amount: { type: Number, required: true },
   date: { type: Number, required: true },
   cancelled: { type: Boolean, default: false },
-  payment: { type: Boolean, default: false },
   isCompleted: { type: Boolean, default: false },
+  payment: { type: Boolean, default: false },
 
-  // Video Consultation Fields
+  // NEW FIELDS FOR REFACTORING AND PAYMENT
   appointmentType: {
     type: String,
     enum: ["offline", "video"],
+    required: true,
     default: "offline",
   },
-  isVideo: { type: Boolean, default: false },
-  videoConsultationData: {
-    patientName: { type: String },
-    patientEmail: { type: String },
-    patientPhone: { type: String },
-    meetingLink: { type: String },
-    meetingId: { type: String },
-  },
-
-  // No-show and Cancellation Tracking
-  noShow: { type: Boolean, default: false },
-  cancelledBy: { type: String, enum: ["patient", "doctor"], default: null },
-  cancelledAt: { type: Number, default: null },
-  joinedAt: { type: Number, default: null },
-  leftAt: { type: Number, default: null },
-  completedAt: { type: Number, default: null },
-
-  //Refund Information
-  refundAmount: { type: Number, default: 0 },
-  refundStatus: {
+  paymentStatus: {
     type: String,
-    enum: ["pending", "processed", "failed"],
-    default: null,
+    enum: ["Pending", "Success", "Failed", "Cancelled"],
+    default: "Pending",
   },
+  transactionId: {
+    type: String,
+    unique: true,
+    sparse: true, // sparse allows multiple null/undefined values while keeping actual IDs unique
+  },
+  val_id: {
+    type: String,
+    default: "", // Populated later upon successful SSLCommerz validation
+  },
+  meetingLink: {
+    type: String,
+    default: "",
+  },
+  isVideo: { type: Boolean, default: false },
+  videoConsultationData: { type: Object, default: {} },
 });
 
 const appointmentModel =
   mongoose.models.appointment ||
   mongoose.model("appointment", appointmentSchema);
+
 export default appointmentModel;

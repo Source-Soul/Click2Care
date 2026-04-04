@@ -61,7 +61,7 @@ const PaymentConfirmationForm = () => {
       setLoading(true);
       setPaymentProcessing(true);
 
-      // Validate form
+      // 1. Basic Validate form
       if (
         !formData.patientName ||
         !formData.patientEmail ||
@@ -73,7 +73,6 @@ const PaymentConfirmationForm = () => {
         return;
       }
 
-      // Email validation
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.patientEmail)) {
         toast.error("Invalid email address");
@@ -82,7 +81,6 @@ const PaymentConfirmationForm = () => {
         return;
       }
 
-      // Phone validation
       const phoneRegex = /^[0-9]{10,}$/;
       if (!phoneRegex.test(formData.patientPhone.replace(/[-\s]/g, ""))) {
         toast.error("Invalid phone number");
@@ -91,46 +89,40 @@ const PaymentConfirmationForm = () => {
         return;
       }
 
-      // Simulate payment processing
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // 2. Prepare the Unified Payload for SSLCommerz
+      const payload = {
+        docId,
+        slotDate,
+        slotTime,
+        appointmentType: isVideo ? "video" : "offline",
+        patientName: formData.patientName,
+        patientEmail: formData.patientEmail,
+        patientPhone: formData.patientPhone,
+      };
 
-      // Dynamically select the API endpoint based on appointment type
-      const endpoint = isVideo
-        ? "/api/user/create-video-consultation"
-        : "/api/user/book-appointment"; // Ensure this matches your backend's offline route
-
-      // Create appointment AND confirm in one API call
+      // 3. Call initiate-payment endpoint
       const { data } = await axios.post(
-        backendUrl + endpoint,
-        {
-          docId,
-          slotDate,
-          slotTime,
-          appointmentType, // Passing type just in case your backend uses a unified route later
-          patientName: formData.patientName,
-          patientEmail: formData.patientEmail,
-          patientPhone: formData.patientPhone,
-        },
-        { headers: { token } }
+        backendUrl + "/api/user/initiate-payment",
+        payload,
+        { headers: { token } } //authUser middleware will attach userId from this token
       );
 
-      if (data.success) {
-        toast.success(`${displayType} confirmed!`);
-        setAppointmentId(data.appointmentId || data.id); // Ensure fallback if API differs
-
-        if (isVideo) {
-          setMeetingLink(data.meetingLink);
-        }
-
-        setConfirmationComplete(true);
-        getDoctorsData(); // Refresh available slots
+      // 4. Handle the SSLCommerz Redirect
+      if (data.success && data.url) {
+        //Redirect user to the SSLCommerz payment page
+        window.location.replace(data.url);
       } else {
-        toast.error(data.message);
+        toast.error(data.message || "Failed to initialize payment gateway");
+        setLoading(false);
+        setPaymentProcessing(false);
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message || "Failed to confirm booking");
-    } finally {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to initiate booking"
+      );
       setLoading(false);
       setPaymentProcessing(false);
     }
