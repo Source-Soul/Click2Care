@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+
 const MyAppoinments = () => {
   const { backendUrl, token, getDoctorsData } = useContext(AppContext);
   const navigate = useNavigate();
@@ -26,6 +27,7 @@ const MyAppoinments = () => {
     "NOV",
     "DEC",
   ];
+
   const slotDateFormat = (slotDate) => {
     const dateArray = slotDate.split("_");
     return (
@@ -53,7 +55,7 @@ const MyAppoinments = () => {
       const { data } = await axios.post(
         backendUrl + "/api/user/cancel-appointment",
         { appointmentId },
-        { headers: { token } },
+        { headers: { token } }
       );
 
       if (data.success) {
@@ -73,34 +75,39 @@ const MyAppoinments = () => {
   };
 
   const paymentSslcommerz = async (appointmentId) => {
-    //console.log("appointmentSslcommerz function called with:", appointmentId);
     try {
+      const toastId = toast.loading("Connecting to secure payment...");
       const { data } = await axios.post(
-        backendUrl + "/api/user/payment-sslcommerz",
+        backendUrl + "/api/user/retry-payment",
         { appointmentId },
-        { headers: { token } },
+        { headers: { token } }
       );
 
-      if (data.success) {
-        console.log(data.order);
+      if (data.success && data.url) {
+        toast.dismiss(toastId);
+        // FIX: href is a property, not a function! Use '=' so the back button works natively.
+        window.location.href = data.url;
+      } else {
+        toast.update(toastId, {
+          render: data.message,
+          type: "error",
+          isLoading: false,
+          autoClose: 3000,
+        });
       }
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+      toast.error("Failed to initiate payment");
+    }
   };
 
   const canCancelAppointment = (appointment) => {
-    // Show cancel button for any appointment that is:
-    // 1. Not already cancelled
-    // 2. Not marked as no-show
-
     if (appointment.cancelled) {
       return false;
     }
     if (appointment.noShow) {
       return false;
     }
-
-    // Allow cancellation for any non-cancelled, non-noshow appointment
-    // regardless of time (business logic can handle date validation)
     return true;
   };
 
@@ -109,7 +116,6 @@ const MyAppoinments = () => {
    */
   const parseTime = (timeStr) => {
     try {
-      // Match: "HH:MM AM/PM" or "HH:MM"
       const timeMatch = timeStr
         .trim()
         .match(/^(\d{1,2}):(\d{2})(?:\s*(AM|PM))?$/i);
@@ -120,7 +126,6 @@ const MyAppoinments = () => {
       const minutes = Number(minuteStr);
       const meridiem = meridiemRaw ? meridiemRaw.toUpperCase() : null;
 
-      // Convert 12-hour to 24-hour format
       if (meridiem) {
         if (meridiem === "PM" && hours !== 12) {
           hours += 12;
@@ -149,18 +154,10 @@ const MyAppoinments = () => {
       const { hours, minutes } = parseTime(appointment.slotTime);
       const appointmentTime = new Date(year, month - 1, day, hours, minutes);
 
-      // Add 30 minutes to the scheduled time
       const meetingEndTime = new Date(appointmentTime.getTime() + 30 * 60000);
       const now = new Date();
 
       const expired = now > meetingEndTime;
-
-      console.log("Meeting Expired Check:", {
-        appointment: appointmentTime.toLocaleString(),
-        meetingEndTime: meetingEndTime.toLocaleString(),
-        now: now.toLocaleString(),
-        isExpired: expired,
-      });
 
       return expired;
     } catch (error) {
@@ -190,7 +187,6 @@ const MyAppoinments = () => {
       </p>
       <div>
         {appointments.map((item, index) => {
-          // Compute isExpired ONCE per render
           const isExpired = isMeetingExpired(item);
 
           return (
@@ -213,15 +209,26 @@ const MyAppoinments = () => {
                   {item.docData.speciality}
                 </p>
 
-                {/* Appointment Type Badge */}
-                <div className="mt-2">
+                {/* Appointment Type & Payment Status Badges */}
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   {item.appointmentType === "video" ? (
                     <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold">
                       Video Consultation
                     </span>
                   ) : (
                     <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-semibold">
-                       Offline Consultation
+                      Offline Consultation
+                    </span>
+                  )}
+
+                  {/* SSLCommerz Payment Badge */}
+                  {item.payment || item.paymentStatus === "Success" ? (
+                    <span className="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+                      ✓ Paid via SSLCommerz
+                    </span>
+                  ) : (
+                    <span className="inline-block border border-orange-400 text-orange-500 px-3 py-1 rounded-full text-xs font-semibold">
+                      Payment Pending
                     </span>
                   )}
                 </div>
@@ -239,48 +246,60 @@ const MyAppoinments = () => {
                 {/* No-Show Status */}
                 {item.noShow && (
                   <p className="text-xs text-red-600 mt-2 font-semibold">
-                     Appointment Marked as No-Show
+                    Appointment Marked as No-Show
                   </p>
                 )}
               </div>
               <div></div>
-              <div className="flex flex-col gap-2 justify-end">
-                {/* Video Consultation Actions */}
-                {item.appointmentType === "video" &&
-                !item.cancelled &&
-                !item.noShow &&
-                !item.isCompleted ? (
-                  <>
-                    {isExpired ? (
-                      // Meeting Expired
-                      <button
-                        disabled
-                        className="text-sm text-center sm:min-w-48 py-3 px-4 border border-gray-400 rounded-lg text-gray-500 bg-gray-100 cursor-not-allowed font-semibold"
-                      >
-                        ⏱️ Meeting Expired
-                      </button>
-                    ) : item.payment &&
-                      item.videoConsultationData?.meetingLink ? (
-                      // Join Meeting Button
-                      <button
-                        onClick={() => navigate(`/video-meeting/${item._id}`)}
-                        className="text-sm text-center sm:min-w-48 py-3 px-4 border-2 border-blue-500 rounded-lg text-blue-600 font-semibold hover:bg-blue-600 hover:text-white hover:border-blue-700 transition-all duration-300"
-                      >
-                         Join Video Meeting
-                      </button>
-                    ) : (
-                      // Awaiting Confirmation
-                      <button
-                        disabled
-                        className="text-sm text-center sm:min-w-48 py-3 px-4 border border-gray-300 rounded-lg text-gray-400 bg-gray-100 cursor-not-allowed font-semibold"
-                      >
-                         Awaiting Confirmation
-                      </button>
-                    )}
-                  </>
-                ) : null}
 
-                {/* Completed Status */}
+              {/* --- ACTION BUTTONS --- */}
+              <div className="flex flex-col gap-2 justify-end">
+                {/* 1. Payment Button (Shows for ANY unpaid appointment: Offline OR Video) */}
+                {!item.cancelled &&
+                  !item.isCompleted &&
+                  !item.payment &&
+                  item.paymentStatus !== "Success" && (
+                    <button
+                      onClick={() => paymentSslcommerz(item._id)}
+                      className="text-sm text-stone-500 text-center sm:min-w-48 py-2 border border-gray-300 rounded hover:bg-primary hover:text-white transition-all duration-300"
+                    >
+                      Pay Online
+                    </button>
+                  )}
+
+                {/* 2. Video Consultation Actions (ONLY shows if PAID) */}
+                {item.appointmentType === "video" &&
+                  !item.cancelled &&
+                  !item.noShow &&
+                  !item.isCompleted &&
+                  (item.payment || item.paymentStatus === "Success") && (
+                    <>
+                      {isExpired ? (
+                        <button
+                          disabled
+                          className="text-sm text-center sm:min-w-48 py-3 px-4 border border-gray-400 rounded-lg text-gray-500 bg-gray-100 cursor-not-allowed font-semibold"
+                        >
+                          ⏱️ Meeting Expired
+                        </button>
+                      ) : item.videoConsultationData?.meetingLink ? (
+                        <button
+                          onClick={() => navigate(`/video-meeting/${item._id}`)}
+                          className="text-sm text-center sm:min-w-48 py-3 px-4 border-2 border-blue-500 rounded-lg text-blue-600 font-semibold hover:bg-blue-600 hover:text-white hover:border-blue-700 transition-all duration-300"
+                        >
+                          Join Video Meeting
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="text-sm text-center sm:min-w-48 py-3 px-4 border border-gray-300 rounded-lg text-gray-400 bg-gray-100 cursor-not-allowed font-semibold"
+                        >
+                          Awaiting Confirmation
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                {/* 3. Completed Status */}
                 {item.isCompleted && (
                   <button
                     disabled
@@ -290,55 +309,33 @@ const MyAppoinments = () => {
                   </button>
                 )}
 
-                {/* Standard Payment Button */}
-                {!item.cancelled &&
-                  !item.payment &&
-                  item.appointmentType === "offline" && (
-                    <button
-                      onClick={() => {
-                        console.log("Button clicked");
-                        paymentSslcommerz(item._id);
-                      }}
-                      className="text-sm
-                text-stone-500
-                text-center
-                sm:min-w-48
-                py-2
-                border
-                rounded
-                hover:bg-primary
-                hover:text-white
-                transition-all
-                duration-300"
-                    >
-                      Pay Online
-                    </button>
-                  )}
-
-                {/* Cancel Appointment Button - Show for all cancellable appointments */}
+                {/* 4. Cancel Appointment Button */}
                 {canCancelAppointment(item) &&
                   !isExpired &&
-                  item.isCompleted !== true && (
+                  !item.isCompleted && (
                     <button
                       onClick={() => {
                         if (
                           window.confirm(
-                            "Are you sure you want to cancel this appointment?",
+                            "Are you sure you want to cancel this appointment?"
                           )
                         ) {
                           cancelAppointment(item._id);
                         }
                       }}
-                      className="text-sm text-center sm:min-w-48 py-3 px-4 border-2 border-red-500 rounded-lg text-red-600 font-semibold hover:bg-red-600 hover:text-white hover:border-red-700 transition-all duration-300"
+                      className="text-sm text-center sm:min-w-48 py-2 px-4 border border-red-500 rounded text-red-500 hover:bg-red-600 hover:text-white transition-all duration-300"
                     >
-                      ✗ Cancel Appointment
+                      Cancel Appointment
                     </button>
                   )}
 
-                {/* Cancelled Status */}
+                {/* 5. Cancelled Status */}
                 {item.cancelled && (
-                  <button className="sm:min-w-48 py-2 px-4 border border-red-500 rounded-lg text-red-500 bg-red-50 hover:bg-red-100 transition">
-                    ✗ Appointment Cancelled
+                  <button
+                    disabled
+                    className="sm:min-w-48 py-2 px-4 border border-red-500 rounded-lg text-red-500 bg-red-50 font-semibold"
+                  >
+                    ✗ Cancelled
                   </button>
                 )}
               </div>

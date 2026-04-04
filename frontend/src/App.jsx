@@ -30,7 +30,10 @@ const App = () => {
         <Route path="/my-profile" element={<MyProfile />} />
         <Route path="/my-appointments" element={<MyAppoinments />} />
         <Route path="/appoinment/:docId" element={<Appoinment />} />
-        <Route path="/book-appointment" element={<PaymentConfirmationForm />} />
+        <Route
+          path="/book-offline-appointment"
+          element={<PaymentConfirmationForm />}
+        />
         <Route
           path="/video-meeting/:appointmentId"
           element={<VideoMeeting />}

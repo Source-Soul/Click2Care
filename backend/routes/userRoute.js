@@ -19,8 +19,17 @@ import {
 } from "../controllers/userController.js";
 import authUser from "../middleware/authUser.js";
 import upload from "../middleware/multer.js";
+import {
+  initiatePayment,
+  paymentSuccess,
+  paymentFail,
+  paymentCancel,
+  paymentIpn,
+  retryPayment,
+} from "../controllers/userController.js";
 
 const userRouter = express.Router();
+
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
 
@@ -29,7 +38,7 @@ userRouter.post(
   "/update-profile",
   upload.single("image"),
   authUser,
-  updateProfile,
+  updateProfile
 );
 
 userRouter.post("/book-appointment", authUser, bookAppointment);
@@ -40,17 +49,17 @@ userRouter.post("/cancel-appointment", authUser, cancelAppointment);
 userRouter.post(
   "/initiate-video-consultation",
   authUser,
-  initiateVideoConsultation,
+  initiateVideoConsultation
 );
 userRouter.post(
   "/create-video-consultation",
   authUser,
-  createVideoConsultation,
+  createVideoConsultation
 );
 userRouter.post(
   "/confirm-video-consultation",
   authUser,
-  confirmVideoConsultation,
+  confirmVideoConsultation
 );
 userRouter.post("/appointment-details", authUser, getAppointmentDetails);
 userRouter.post("/validate-meeting-join", authUser, validateMeetingJoin);
@@ -59,4 +68,10 @@ userRouter.post("/mark-left", authUser, markAppointmentLeft);
 userRouter.post("/mark-completed", authUser, markAppointmentCompleted);
 userRouter.post("/check-no-show", authUser, checkAndMarkNoShow);
 
+userRouter.post("/initiate-payment", authUser, initiatePayment);
+userRouter.post("/payment/success/:tran_id", paymentSuccess);
+userRouter.post("/payment/fail/:tran_id", paymentFail);
+userRouter.post("/payment/cancel/:tran_id", paymentCancel);
+userRouter.post("/payment/ipn", paymentIpn);
+userRouter.post("/retry-payment", authUser, retryPayment);
 export default userRouter;

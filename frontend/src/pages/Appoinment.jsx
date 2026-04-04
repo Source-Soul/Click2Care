@@ -121,7 +121,7 @@ const Appoinment = () => {
       let year = date.getFullYear();
 
       const slotDate = day + "_" + month + "_" + year;
-      navigate("/book-appointment", {
+      navigate("/book-offline-appointment", {
         state: {
           docId,
           slotDate,
