@@ -16,13 +16,20 @@ import {
   markAppointmentLeft,
   markAppointmentCompleted,
   checkAndMarkNoShow,
+  completeProfileSetup, // Import kora holo
+  sendOTP, // Notun import kora holo
 } from "../controllers/userController.js";
 import authUser from "../middleware/authUser.js";
 import upload from "../middleware/multer.js";
 
 const userRouter = express.Router();
+
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
+
+// Profile Setup & OTP Routes
+userRouter.post("/send-otp", authUser, sendOTP); // Notun route add kora holo
+userRouter.post("/complete-profile", authUser, completeProfileSetup);
 
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(

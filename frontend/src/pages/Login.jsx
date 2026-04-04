@@ -6,11 +6,9 @@ import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
-
   const navigate = useNavigate();
 
   const [state, setState] = useState("Sign Up");
-
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +27,9 @@ const Login = () => {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success(data.message);
+
+          // Registration er por prothome Profile Setup page e jabe
+          navigate("/profile-setup");
         } else {
           toast.error(data.message);
         }
@@ -41,26 +42,34 @@ const Login = () => {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success(data.message);
+
+          // Logic: Jodi profile complete na thake tobe setup page-e jabe
+          if (data.user && !data.user.isProfileComplete) {
+            navigate("/profile-setup");
+          } else {
+            navigate("/");
+          }
         } else {
           toast.error(data.message);
         }
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message);
+      toast.error("Network Error: Please check if backend server is running");
     }
   };
 
+  // Token thakle automatically redirect kora bondho korlam eikhane
+  // Karon token thakleo amra profile setup e thakte pari
   useEffect(() => {
-    if (token) {
-      navigate("/");
-    }
+    // Eikhane logic ta AppContext theke handle kora best hobe
   }, [token]);
 
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
+      {/* ... (Apnar baki UI code eikhane thakbe) ... */}
       <div className="flex flex-col gap-3 m-auto items-start p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg">
-        <p className="text-2xl front-semibold">
+        <p className="text-2xl font-semibold">
           {state === "Sign Up" ? "Create Account" : "Login"}
         </p>
         <p>

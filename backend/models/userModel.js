@@ -12,10 +12,14 @@ const userSchema = new mongoose.Schema({
   address: { type: Object, default: { line1: " ", line2: " " } },
   gender: { type: String, default: "Not Selected" },
   dob: { type: String, default: "Not Selected" },
-  phone: { type: String, default: '0000000'},
+  phone: { type: String, default: "0000000" },
+  // New Fields
+  age: { type: Number, default: 0 },
+  isProfileComplete: { type: Boolean, default: false },
+  otp: { type: String, default: null },
+  otpExpires: { type: Date, default: null },
 });
 
-const userModel =
-  mongoose.models.user || mongoose.model('user', userSchema);
+const userModel = mongoose.models.user || mongoose.model("user", userSchema);
 
 export default userModel;
