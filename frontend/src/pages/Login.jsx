@@ -6,11 +6,9 @@ import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const { backendUrl, token, setToken } = useContext(AppContext);
-
   const navigate = useNavigate();
 
   const [state, setState] = useState("Sign Up");
-
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -29,6 +27,8 @@ const Login = () => {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success(data.message);
+          // Sign Up hole Profile Setup-e pathabe
+          navigate("/profile-setup");
         } else {
           toast.error(data.message);
         }
@@ -41,6 +41,8 @@ const Login = () => {
           localStorage.setItem("token", data.token);
           setToken(data.token);
           toast.success(data.message);
+          // Login hole Home-e pathabe
+          navigate("/");
         } else {
           toast.error(data.message);
         }
@@ -52,15 +54,17 @@ const Login = () => {
   };
 
   useEffect(() => {
-    if (token) {
+    // Ekhane logic-ti emon hobe jate auto-redirect Sign Up-er somoy badha na dey
+    // Shudhu jodi user age thekei login thake (manual refresh), tokhon eita kaj korbe
+    if (token && state !== "Sign Up") {
       navigate("/");
     }
-  }, [token]);
+  }, [token, state, navigate]);
 
   return (
     <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center">
       <div className="flex flex-col gap-3 m-auto items-start p-8 min-w-[340px] sm:min-w-96 border rounded-xl text-zinc-600 text-sm shadow-lg">
-        <p className="text-2xl front-semibold">
+        <p className="text-2xl font-semibold">
           {state === "Sign Up" ? "Create Account" : "Login"}
         </p>
         <p>
@@ -101,29 +105,27 @@ const Login = () => {
         </div>
         <button
           type="submit"
-          className="bg-primary text-white w-full py-2 rounded-md text-base"
+          className="bg-primary text-white w-full py-2 rounded-md text-base mt-2"
         >
           {state === "Sign Up" ? "Create Account" : "Login"}
         </button>
         {state === "Sign Up" ? (
           <p>
-            Already have an account?
+            Already have an account?{" "}
             <span
               onClick={() => setState("Login")}
               className="text-primary underline cursor-pointer"
             >
-              {" "}
               Login here
             </span>
           </p>
         ) : (
           <p>
-            Create a new account?
+            Create a new account?{" "}
             <span
               onClick={() => setState("Sign Up")}
               className="text-primary underline cursor-pointer"
             >
-              {" "}
               Click here
             </span>
           </p>

@@ -12,23 +12,16 @@ const MyProfile = () => {
 
   const updateUserProfileData = async () => {
     try {
-      // ✅ Validation: ensure all fields are filled
       if (
         !userData.name ||
         !userData.phone ||
         !userData.address?.line1 ||
         !userData.address?.line2 ||
         !userData.dob ||
-        !userData.gender
+        !userData.gender ||
+        !userData.bloodGroup
       ) {
         toast.error("Please fill all fields!");
-        return;
-      }
-
-      // ✅ Frontend phone validation
-      const phoneRegex = /^01[3-9]\d{8}$/;
-      if (!phoneRegex.test(userData.phone)) {
-        toast.error("Enter a valid Bangladeshi phone number");
         return;
       }
 
@@ -38,6 +31,7 @@ const MyProfile = () => {
       formData.append("address", JSON.stringify(userData.address));
       formData.append("dob", userData.dob);
       formData.append("gender", userData.gender);
+      formData.append("bloodGroup", userData.bloodGroup);
 
       if (image) formData.append("image", image);
 
@@ -64,12 +58,12 @@ const MyProfile = () => {
   return (
     userData && (
       <div className="max-w-lg flex flex-col gap-2 text-sm">
-        {/* Profile Image */}
         {isEdit ? (
           <label htmlFor="image">
             <div className="inline-block relative cursor-pointer">
+              {/* Image box design for edit mode */}
               <img
-                className="w-36 rounded opacity-75"
+                className="w-36 h-36 rounded-lg object-cover bg-blue-50 p-1 opacity-75"
                 src={image ? URL.createObjectURL(image) : userData.image}
                 alt="User"
               />
@@ -87,14 +81,16 @@ const MyProfile = () => {
             />
           </label>
         ) : (
-          <img
-            className="w-36 rounded"
-            src={userData.image}
-            alt="User Profile"
-          />
+          /* 1st picture-er moto background and rounded design */
+          <div className="bg-blue-50 w-36 h-36 flex items-center justify-center rounded-lg p-2">
+            <img
+              className="w-full h-full rounded-lg object-cover"
+              src={userData.image}
+              alt="User Profile"
+            />
+          </div>
         )}
 
-        {/* Name */}
         {isEdit ? (
           <input
             className="bg-gray-50 text-3xl font-medium max-w-60 mt-4"
@@ -105,7 +101,7 @@ const MyProfile = () => {
             }
           />
         ) : (
-          <p className="font-medium text-3xl text-natural-800 mt-4">
+          <p className="font-medium text-3xl text-natural-800 mt-4 lowercase">
             {userData.name}
           </p>
         )}
@@ -113,18 +109,14 @@ const MyProfile = () => {
         <hr className="bc-zinc-400 h-[1px] border-none" />
 
         <div className="grid grid-cols-[1fr_3fr] gap-y-2.5 mt-3 text-neutral-700">
-          {/* Email */}
           <p className="font-medium">Email ID:</p>
           <p className="text-green-500">{userData.email}</p>
 
-          {/* Phone */}
           <p className="font-medium">Contact Number:</p>
           {isEdit ? (
             <input
               className="bg-gray-100 max-w-52"
               type="tel"
-              placeholder="Enter valid phone number"
-              pattern="01[3-9]{1}[0-9]{8}"
               value={userData.phone}
               onChange={(e) =>
                 setUserData((prev) => ({ ...prev, phone: e.target.value }))
@@ -134,7 +126,31 @@ const MyProfile = () => {
             <p className="text-green-400">{userData.phone}</p>
           )}
 
-          {/* Address */}
+          <p className="font-medium">Blood Group:</p>
+          {isEdit ? (
+            <select
+              className="bg-gray-100 max-w-28"
+              value={userData.bloodGroup}
+              onChange={(e) =>
+                setUserData((prev) => ({ ...prev, bloodGroup: e.target.value }))
+              }
+            >
+              <option value="">Select</option>
+              <option value="A+">A+</option>
+              <option value="A-">A-</option>
+              <option value="B+">B+</option>
+              <option value="B-">B-</option>
+              <option value="O+">O+</option>
+              <option value="O-">O-</option>
+              <option value="AB+">AB+</option>
+              <option value="AB-">AB-</option>
+            </select>
+          ) : (
+            <p className="text-red-500 font-bold">
+              {userData.bloodGroup || "Not Provided"}
+            </p>
+          )}
+
           <p className="font-medium">Address:</p>
           {isEdit ? (
             <div>
@@ -169,7 +185,6 @@ const MyProfile = () => {
             </p>
           )}
 
-          {/* Gender */}
           <p className="font-medium">Gender:</p>
           {isEdit ? (
             <select
@@ -186,7 +201,6 @@ const MyProfile = () => {
             <p className="text-gray-400">{userData.gender}</p>
           )}
 
-          {/* Birth Date */}
           <p className="font-medium">Birth Date:</p>
           {isEdit ? (
             <input
@@ -202,7 +216,6 @@ const MyProfile = () => {
           )}
         </div>
 
-        {/* Edit / Save Button */}
         <div className="mt-10">
           {isEdit ? (
             <button
