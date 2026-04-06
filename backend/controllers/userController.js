@@ -139,23 +139,31 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { userId, name, phone, address, dob, gender } = req.body;
+    const { userId, name, phone, address, dob, gender, bloodGroup } = req.body;
     const imageFile = req.file;
 
-    if (!name || !phone || !address || !dob || !gender) {
-      return res.json({ success: false, message: "Please enter all fields" });
+    if (!name || !phone || !address || !bloodGroup) {
+      return res.json({
+        success: false,
+        message: "Name, Phone, Blood Group and Address are required",
+      });
     }
+
     if (!validator.isMobilePhone(phone + "", "any")) {
       return res.json({ success: false, message: "Invalid phone number" });
     }
 
-    await userModel.findByIdAndUpdate(userId, {
+    const updateData = {
       name,
       phone,
+      bloodGroup, // Blood group data update e add kora holo
       address: JSON.parse(address),
-      dob,
-      gender,
-    });
+    };
+
+    if (dob) updateData.dob = dob;
+    if (gender) updateData.gender = gender;
+
+    await userModel.findByIdAndUpdate(userId, updateData);
 
     if (imageFile) {
       const imageUpload = await cloudinary.uploader.upload(imageFile.path, {
@@ -246,7 +254,7 @@ const listAppointment = async (req, res) => {
     res.json({ success: true, appointments });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message }); // fixed req.json typo
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -480,7 +488,7 @@ const confirmVideoConsultation = async (req, res) => {
         "videoConsultationData.meetingId": meetingId,
         payment: true,
       },
-      { new: true }
+      { new: true },
     );
 
     await sendNotification({
@@ -565,7 +573,7 @@ const markAppointmentCompleted = async (req, res) => {
     const updatedAppointment = await appointmentModel.findByIdAndUpdate(
       appointmentId,
       { isCompleted: true, completedAt: Date.now() },
-      { new: true }
+      { new: true },
     );
 
     await sendNotification({
@@ -806,7 +814,7 @@ const initiatePayment = async (req, res) => {
       // Rollback
       await appointmentModel.findByIdAndDelete(newAppointment._id);
       slots_booked[slotDate] = slots_booked[slotDate].filter(
-        (t) => t !== slotTime
+        (t) => t !== slotTime,
       );
       await doctorModel.findByIdAndUpdate(docId, { slots_booked });
       return res.json({
@@ -833,7 +841,7 @@ const retryPayment = async (req, res) => {
     }
 
     const new_tran_id = `TXN-${Date.now()}-${Math.floor(
-      Math.random() * 10000
+      Math.random() * 10000,
     )}`;
     appointment.transactionId = new_tran_id;
     await appointment.save();
@@ -881,14 +889,12 @@ const retryPayment = async (req, res) => {
 
 const paymentSuccess = async (req, res) => {
   try {
-    // Safely extract tran_id from either params (URL) or body
     const tran_id = req.params.tran_id || req.body.tran_id;
 
-    // Find document by custom field, not standard _id
     const appointment = await appointmentModel.findOneAndUpdate(
       { transactionId: tran_id },
       { payment: true, paymentStatus: "Success" },
-      { new: true }
+      { new: true },
     );
 
     if (!appointment) {
@@ -902,7 +908,6 @@ const paymentSuccess = async (req, res) => {
         appointment.videoConsultationData || {};
       appointment.videoConsultationData.meetingId = meetingId;
       appointment.videoConsultationData.meetingLink = meetingLink;
-      // Critical Mongoose Step for nested Objects:
       appointment.markModified("videoConsultationData");
       await appointment.save();
     }
@@ -919,7 +924,7 @@ const paymentFail = async (req, res) => {
     const tran_id = req.params.tran_id || req.body.tran_id;
     await appointmentModel.findOneAndUpdate(
       { transactionId: tran_id },
-      { paymentStatus: "Failed" }
+      { paymentStatus: "Failed" },
     );
     res.redirect(`${process.env.FRONTEND_URL}/my-appointments`);
   } catch (error) {
@@ -933,7 +938,7 @@ const paymentCancel = async (req, res) => {
     const tran_id = req.params.tran_id || req.body.tran_id;
     await appointmentModel.findOneAndUpdate(
       { transactionId: tran_id },
-      { paymentStatus: "Cancelled" }
+      { paymentStatus: "Cancelled" },
     );
     res.redirect(`${process.env.FRONTEND_URL}/my-appointments`);
   } catch (error) {
