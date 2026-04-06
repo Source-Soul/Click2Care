@@ -11,6 +11,7 @@ import {
   calculateRefund,
   cancelAppointmentWithRefund,
 } from "../utils/appointmentService.js";
+import crypto from "crypto";
 
 // ==========================================
 // Helper Functions
@@ -73,6 +74,13 @@ const generateMeetingLink = (appointmentId) => {
   };
 };
 
+// ===== OTP Helpers =====
+const generateOtp = () =>
+  Math.floor(100000 + Math.random() * 900000).toString();
+
+const hashCode = (code) =>
+  crypto.createHash("sha256").update(code).digest("hex");
+
 // ==========================================
 // User Auth & Profile
 // ==========================================
@@ -80,6 +88,7 @@ const generateMeetingLink = (appointmentId) => {
 const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
     if (!name || !email || !password) {
       return res.json({ success: false, message: "Please enter all fields" });
     }
@@ -92,17 +101,125 @@ const registerUser = async (req, res) => {
         message: "Password must be atleast 6 characters",
       });
     }
+
+    let user = await userModel.findOne({ email });
+
+    if (user && user.isVerified) {
+      return res.json({ success: false, message: "User already exists" });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const userData = { name, email, password: hashedPassword };
-    const newUser = new userModel(userData);
-    const user = await newUser.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    res.json({ success: true, token });
+    const otp = generateOtp();
+    const hashedOtp = hashCode(otp);
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    if (!user) {
+      user = await userModel.create({
+        name,
+        email,
+        password: hashedPassword,
+        isVerified: false,
+        verificationCode: hashedOtp,
+        verificationCodeExpiresAt: otpExpires,
+      });
+    } else {
+      user.password = hashedPassword;
+      user.verificationCode = hashedOtp;
+      user.verificationCodeExpiresAt = otpExpires;
+      await user.save();
+    }
+
+    // DEVELOPMENT ONLY: log OTP in console instead of sending email
+    console.log("OTP for", email, "is", otp);
+
+    return res.json({
+      success: true,
+      message:
+        "Registration successful. Please enter the OTP shown in the server console.",
+    });
   } catch (error) {
     console.log(error);
-    return res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const verifyEmail = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.json({ success: false, message: "Email and code required" });
+    }
+
+    const user = await userModel.findOne({ email });
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    if (!user.verificationCode || !user.verificationCodeExpiresAt) {
+      return res.json({
+        success: false,
+        message: "No verification code found, please sign up again.",
+      });
+    }
+
+    if (user.verificationCodeExpiresAt < new Date()) {
+      return res.json({
+        success: false,
+        message: "Verification code expired, please sign up again.",
+      });
+    }
+
+    const hashedInput = hashCode(code);
+    if (hashedInput !== user.verificationCode) {
+      return res.json({ success: false, message: "Invalid verification code" });
+    }
+
+    user.isVerified = true;
+    user.verificationCode = undefined;
+    user.verificationCodeExpiresAt = undefined;
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    return res.json({
+      success: true,
+      message: "Email verified successfully",
+      token,
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
+  }
+};
+
+// Optional: keep this for future, but for now you can ignore it in frontend.
+// It just regenerates OTP and logs it again.
+const resendVerificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await userModel.findOne({ email });
+    if (!user) return res.json({ success: false, message: "User not found" });
+    if (user.isVerified)
+      return res.json({ success: false, message: "User already verified" });
+
+    const otp = generateOtp();
+    const hashedOtp = hashCode(otp);
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.verificationCode = hashedOtp;
+    user.verificationCodeExpiresAt = otpExpires;
+    await user.save();
+
+    console.log("RESEND OTP for", email, "is", otp);
+
+    res.json({
+      success: true,
+      message: "Verification code regenerated. Check server console.",
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -113,13 +230,24 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.json({ success: false, message: "User Does not Exist" });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (isMatch) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-      return res.json({ success: true, token });
-    } else {
+
+    if (!user.isVerified) {
+      return res.json({
+        success: false,
+        needsVerification: true,
+        message: "Please verify your email before logging in.",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password || "");
+    if (!isMatch) {
       return res.json({ success: false, message: "Wrong Password" });
     }
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    return res.json({ success: true, token, message: "Login successful" });
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: error.message });
@@ -246,7 +374,7 @@ const listAppointment = async (req, res) => {
     res.json({ success: true, appointments });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message }); // fixed req.json typo
+    res.json({ success: false, message: error.message });
   }
 };
 
@@ -283,6 +411,11 @@ const cancelAppointment = async (req, res) => {
     res.json({ success: false, message: error.message });
   }
 };
+
+// ==========================================
+// Video Consultations
+// ==========================================
+// (unchanged)
 
 // ==========================================
 // Video Consultations
@@ -954,6 +1087,8 @@ const paymentIpn = async (req, res) => {
 export {
   registerUser,
   loginUser,
+  verifyEmail,
+  resendVerificationCode,
   getProfile,
   updateProfile,
   bookAppointment,
@@ -975,3 +1110,4 @@ export {
   paymentCancel,
   paymentIpn,
 };
+

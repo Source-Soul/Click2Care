@@ -13,6 +13,13 @@ const userSchema = new mongoose.Schema({
   gender: { type: String, default: "Not Selected" },
   dob: { type: String, default: "Not Selected" },
   phone: { type: String, default: '0000000'},
+
+  // NEW
+  isVerified: { type: Boolean, default: false }, // email verification
+  verificationCode: { type: String },            // hashed OTP
+  verificationCodeExpiresAt: { type: Date },
+
+  googleId: { type: String, default: null },     // for Google sign-in link
 });
 
 const userModel =

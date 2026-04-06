@@ -2,6 +2,8 @@ import express from "express";
 import {
   registerUser,
   loginUser,
+  verifyEmail,
+  resendVerificationCode,
   getProfile,
   updateProfile,
   bookAppointment,
@@ -27,11 +29,13 @@ import {
   paymentIpn,
   retryPayment,
 } from "../controllers/userController.js";
-
+//import { googleSignIn } from "../controllers/userController.js";
 const userRouter = express.Router();
 
 userRouter.post("/register", registerUser);
 userRouter.post("/login", loginUser);
+userRouter.post("/verify-email", verifyEmail);
+//userRouter.post("/auth/google", googleSignIn);
 
 userRouter.get("/get-profile", authUser, getProfile);
 userRouter.post(
